@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=61", "Cython>=3", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,9 +7,9 @@ name = "vie-plugin-dc-fuse"
 version = "0.1.0"
 description = "VIE 直流熔丝检测插件"
 requires-python = ">=3.10"
-# 生产环境应声明依赖 "vie-framework"；in-repo demo 用 --no-deps 安装，
-# 框架的 services/schemas/routers 由仓库根目录在 sys.path 上提供。
-dependencies = []
+# 二进制 wheel 部署时依赖框架包；in-repo dev 安装用 --no-deps，
+# 框架的 services/schemas/routers 由仓库根在 sys.path 上提供。
+dependencies = ["vie-framework"]
 
 [project.entry-points."vie.plugins"]
 dc_fuse = "vie_plugin_dc_fuse.plugin"
