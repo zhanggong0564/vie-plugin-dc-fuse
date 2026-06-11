@@ -3,7 +3,7 @@
 运行（从仓库根目录）：
     python plugins/vie-plugin-dc-fuse/examples/run.py <图片路径> [产品型号]
 
-前置：已 `pip install -e plugins/vie-plugin-dc-fuse`；权重 ./weights/dc_fuse_v5.onnx 就位。
+前置：已 `pip install -e plugins/vie-plugin-dc-fuse`；权重 ./weights/dc_fuse/det_yolo_v5.onnx 就位。
 """
 import os
 import sys
