@@ -1,11 +1,11 @@
-"""entry_point 模块：导入 business_logic 触发工厂注册，并暴露 dc_fuse_router。"""
+"""Entry point: register the scene and expose ``dc_fuse_router``."""
 
 import numpy as np
 
 from routers.base_router import BaseRouter
 from schemas.data_base import InputParamsBusiness
 from .schemas import DCFuseRequest
-from . import business_logic  # noqa: F401  导入即触发 @detection_factory.register("dc_fuse")
+from . import business_logic  # noqa: F401  触发 ScenarioRegistry 注册
 
 
 class DCFuseRouter(BaseRouter):
