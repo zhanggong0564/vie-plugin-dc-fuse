@@ -27,7 +27,10 @@ def test_result_judge_flags_missing_items():
 @pytest.fixture
 def api():
     """绕过真实模型加载，构造 DCFuseDetectorAPI。"""
-    with patch("vie_plugin_dc_fuse.business_logic.DCFuseDetector"):
+    with (
+        patch("vie_plugin_dc_fuse.business_logic.create_inference_runner"),
+        patch("vie_plugin_dc_fuse.business_logic.DCFuseDetector"),
+    ):
         from vie_plugin_dc_fuse.business_logic import DCFuseDetectorAPI
         yield DCFuseDetectorAPI(MagicMock())
 
