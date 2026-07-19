@@ -7,8 +7,13 @@
 
 from collections import defaultdict
 
-from services.api import detection_factory
 from services.base import BusinessLogicBase
+from services.inference import (
+    OnnxRuntimeOptions,
+    RunnerSpec,
+    create_inference_runner,
+)
+from services.scenario_registry import scenario_registry
 from schemas.data_base import MoMResult, DetectionItem, MessageType
 from schemas.exceptions import ProductNotRegisteredError, ModelInferenceError
 from schemas.inference_context import InferenceContext
@@ -94,7 +99,7 @@ class ResultJudge:
         return detection_map.get(key, False)
 
 
-@detection_factory.register("dc_fuse")
+@scenario_registry.register("dc_fuse")
 class DCFuseDetectorAPI(BusinessLogicBase):
     SUPPORTED_TYPES = {
         "五路有熔丝盒有磁环": ResultJudge(
@@ -123,11 +128,27 @@ class DCFuseDetectorAPI(BusinessLogicBase):
     def _initialize_model(self, settings):
         from .config import DcFuseConfig
         cfg = DcFuseConfig()
+        runner = None
         try:
-            self.detector = DCFuseDetector(cfg.model_path, cfg.confThreshold)
+            runner = create_inference_runner(
+                RunnerSpec(scenario="dc_fuse", onnx_path=cfg.model_path),
+                OnnxRuntimeOptions.from_settings(settings),
+            )
+            self.detector = DCFuseDetector(runner, cfg.confThreshold)
         except Exception as e:
+            if runner is not None:
+                try:
+                    runner.close()
+                except Exception as close_error:
+                    vision_logger.warning(
+                        f"dc_fuse 初始化回滚清理失败: {close_error}"
+                    )
             vision_logger.error(f"initialize model failed, error: {e}")
-            raise ModelInferenceError("dc_fuse 模型加载失败", scenario="dc_fuse", original_error=e)
+            raise ModelInferenceError(
+                "dc_fuse 模型加载失败",
+                scenario="dc_fuse",
+                original_error=e,
+            ) from e
 
     def business_post_process(self, ctx: InferenceContext) -> None:
         product_type = ctx.product_type
