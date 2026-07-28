@@ -51,39 +51,36 @@ class ResultJudge:
         no_upper_screw = det_info.get("no_upper_crossbeam_screw_9", [])
         no_lower_screw = det_info.get("no_lower_crossbeam_screw_10", [])
         small_screw = det_info.get("small_screw_8", [])
-        res = {
+        results = {
             "screw": True,
             "nut": True,
             "metal_piece": True,
             "upper_screw": True,
             "lower_screw": True,
-            "brass_plate": True,
+            "brass_plate": len(brass_plate) == self.ways,
             "small_screw": True,
         }
         if self.is_detectscrew:
-            if (len(screw) != self.ways * 2) and (len(no_screw) > 0):
-                res["screw"] = False
+            results["screw"] = not (
+                len(screw) != self.ways * 2 and len(no_screw) > 0
+            )
         if self.is_small_screw:
-            if len(small_screw) != self.ways:
-                res["small_screw"] = False
+            results["small_screw"] = len(small_screw) == self.ways
         if self.is_detect_nut:
-            if len(nut) != self.ways * 2:
-                res["nut"] = False
+            results["nut"] = len(nut) == self.ways * 2
         if self.is_detect_metal_piece:
-            if self.metal_piece_num2 == 2:
-                if len(metal_piece) != 2:
-                    res["metal_piece"] = False
-            else:
-                if not (len(metal_piece) == 4 or len(metal_piece) == 6):
-                    res["metal_piece"] = False
+            allowed_counts = {2} if self.metal_piece_num2 == 2 else {4, 6}
+            results["metal_piece"] = len(metal_piece) in allowed_counts
         if self.is_detect_upper_screw:
-            if (len(upper_screw) != 2 or len(lower_screw) != 2) and (
-                len(no_upper_screw) > 0 or len(no_lower_screw) > 0
-            ):
-                res["upper_screw"] = False
-        if len(brass_plate) != self.ways:
-            res["brass_plate"] = False
-        return {k: v for k, v in res.items() if self._is_detection_enabled(k)}
+            results["upper_screw"] = not (
+                (len(upper_screw) != 2 or len(lower_screw) != 2)
+                and (len(no_upper_screw) > 0 or len(no_lower_screw) > 0)
+            )
+        return {
+            key: value
+            for key, value in results.items()
+            if self._is_detection_enabled(key)
+        }
 
     def _is_detection_enabled(self, key: str) -> bool:
         """检查指定检测项是否启用"""
@@ -103,14 +100,37 @@ class ResultJudge:
 class DCFuseDetectorAPI(BusinessLogicBase):
     SUPPORTED_TYPES = {
         "五路有熔丝盒有磁环": ResultJudge(
-            ways=5, is_detectscrew=True, is_small_screw=True, is_detect_metal_piece=True, is_detect_upper_screw=True
+            ways=5,
+            is_detectscrew=True,
+            is_small_screw=True,
+            is_detect_metal_piece=True,
+            is_detect_upper_screw=True,
         ),
-        "五路有熔丝盒无磁环": ResultJudge(ways=5, is_detectscrew=True, is_detect_nut=True, is_detect_metal_piece=True),
-        "六路无熔丝盒无磁环": ResultJudge(ways=6, is_detectscrew=False, is_detect_metal_piece=True, is_detect_nut=True),
-        "六路有熔丝盒无磁环": ResultJudge(ways=6, is_detectscrew=True, is_detect_nut=True, is_detect_metal_piece=True),
+        "五路有熔丝盒无磁环": ResultJudge(
+            ways=5,
+            is_detectscrew=True,
+            is_detect_nut=True,
+            is_detect_metal_piece=True,
+        ),
+        "六路无熔丝盒无磁环": ResultJudge(
+            ways=6,
+            is_detectscrew=False,
+            is_detect_metal_piece=True,
+            is_detect_nut=True,
+        ),
+        "六路有熔丝盒无磁环": ResultJudge(
+            ways=6,
+            is_detectscrew=True,
+            is_detect_nut=True,
+            is_detect_metal_piece=True,
+        ),
         "七路无熔丝盒无磁环": ResultJudge(ways=7, is_detectscrew=False, is_detect_nut=True),
         "七路有熔丝盒无磁环": ResultJudge(
-            ways=7, is_detect_metal_piece=True, is_detectscrew=True, is_detect_nut=True, metal_piece_num=2
+            ways=7,
+            is_detect_metal_piece=True,
+            is_detectscrew=True,
+            is_detect_nut=True,
+            metal_piece_num=2,
         ),
     }
 
@@ -127,6 +147,7 @@ class DCFuseDetectorAPI(BusinessLogicBase):
 
     def _initialize_model(self, settings):
         from .config import DcFuseConfig
+
         cfg = DcFuseConfig()
         runner = None
         try:
@@ -161,7 +182,11 @@ class DCFuseDetectorAPI(BusinessLogicBase):
         result = ctx.raw_result  # DetectResult
         result_judge = self.SUPPORTED_TYPES[product_type]
         det_info = defaultdict(list)
-        for bbox, score, name in zip(result.boxes, result.scores, result.class_names):
+        for bbox, score, name in zip(
+            result.boxes,
+            result.scores,
+            result.class_names,
+        ):
             det_info[name].append({"bbox": bbox, "score": score})
         judge_result = result_judge(det_info)
         # 坐标输出像素 xyxy，归一化由基类 normalize_hook 统一处理（NORMALIZE 默认 True）
@@ -172,7 +197,11 @@ class DCFuseDetectorAPI(BusinessLogicBase):
             for sub_label in self.label_mapping.get(label, []):
                 for det in det_info.get(sub_label, []):
                     mom_result.detailList.append(
-                        DetectionItem(status=is_pass, scene=sub_label,
-                                      coordinate=det["bbox"], accuracy=det["score"])
+                        DetectionItem(
+                            status=is_pass,
+                            scene=sub_label,
+                            coordinate=det["bbox"],
+                            accuracy=det["score"],
+                        )
                     )
         ctx.result = mom_result
