@@ -61,7 +61,13 @@ def test_business_post_process_builds_mom(api):
     # to_dict 输出形状与框架一致
     out = ctx.result.to_dict()
     assert out["status"] == "true"
-    assert set(out.keys()) == {"status", "detailList", "error_msg", "message"}
+    assert set(out.keys()) == {
+        "status",
+        "verdict",
+        "detailList",
+        "error_msg",
+        "message",
+    }
 
 
 def test_business_post_process_marks_fail(api):
