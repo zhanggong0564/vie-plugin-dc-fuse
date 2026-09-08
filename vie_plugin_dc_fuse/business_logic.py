@@ -30,7 +30,7 @@ class ResultJudge:
         is_detect_nut=False,
         is_detectscrew=True,
         is_small_screw=False,
-        metal_piece_num=4,
+        metal_piece_counts=(4,),
     ):
         self.ways = ways
         self.is_detect_metal_piece = is_detect_metal_piece
@@ -38,7 +38,7 @@ class ResultJudge:
         self.is_detect_nut = is_detect_nut
         self.is_detectscrew = is_detectscrew
         self.is_small_screw = is_small_screw
-        self.metal_piece_num2 = metal_piece_num
+        self.metal_piece_counts = frozenset(metal_piece_counts)
 
     def __call__(self, det_info):
         screw = det_info.get("screw_1", [])
@@ -69,8 +69,7 @@ class ResultJudge:
         if self.is_detect_nut:
             results["nut"] = len(nut) == self.ways * 2
         if self.is_detect_metal_piece:
-            allowed_counts = {2} if self.metal_piece_num2 == 2 else {4, 6}
-            results["metal_piece"] = len(metal_piece) in allowed_counts
+            results["metal_piece"] = len(metal_piece) in self.metal_piece_counts
         if self.is_detect_upper_screw:
             results["upper_screw"] = not (
                 (len(upper_screw) != 2 or len(lower_screw) != 2)
@@ -130,7 +129,7 @@ class DCFuseDetectorAPI(BusinessLogicBase):
             is_detect_metal_piece=True,
             is_detectscrew=True,
             is_detect_nut=True,
-            metal_piece_num=2,
+            metal_piece_counts=(2,),
         ),
     }
 
