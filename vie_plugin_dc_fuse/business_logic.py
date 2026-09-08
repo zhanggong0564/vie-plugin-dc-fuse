@@ -27,6 +27,7 @@ class ResultJudge:
         ways=5,
         is_detect_metal_piece=True,
         is_detect_upper_screw=False,
+        is_detect_lower_screw=False,
         is_detect_nut=False,
         is_detectscrew=True,
         is_small_screw=False,
@@ -35,6 +36,7 @@ class ResultJudge:
         self.ways = ways
         self.is_detect_metal_piece = is_detect_metal_piece
         self.is_detect_upper_screw = is_detect_upper_screw
+        self.is_detect_lower_screw = is_detect_lower_screw
         self.is_detect_nut = is_detect_nut
         self.is_detectscrew = is_detectscrew
         self.is_small_screw = is_small_screw
@@ -71,10 +73,9 @@ class ResultJudge:
         if self.is_detect_metal_piece:
             results["metal_piece"] = len(metal_piece) in self.metal_piece_counts
         if self.is_detect_upper_screw:
-            results["upper_screw"] = not (
-                (len(upper_screw) != 2 or len(lower_screw) != 2)
-                and (len(no_upper_screw) > 0 or len(no_lower_screw) > 0)
-            )
+            results["upper_screw"] = len(upper_screw) == 2 and not no_upper_screw
+        if self.is_detect_lower_screw:
+            results["lower_screw"] = len(lower_screw) == 2 and not no_lower_screw
         return {
             key: value
             for key, value in results.items()
@@ -88,7 +89,7 @@ class ResultJudge:
             "nut": self.is_detect_nut,
             "metal_piece": self.is_detect_metal_piece,
             "upper_screw": self.is_detect_upper_screw,
-            "lower_screw": self.is_detect_upper_screw,
+            "lower_screw": self.is_detect_lower_screw,
             "brass_plate": True,
             "small_screw": self.is_small_screw,
         }
@@ -104,6 +105,7 @@ class DCFuseDetectorAPI(BusinessLogicBase):
             is_small_screw=True,
             is_detect_metal_piece=True,
             is_detect_upper_screw=True,
+            is_detect_lower_screw=True,
         ),
         "五路有熔丝盒无磁环": ResultJudge(
             ways=5,
