@@ -37,8 +37,8 @@
 在框架仓库根目录安装插件并运行示例：
 
 ```bash
-conda run -n padocr pip install -e plugins/vie-plugin-dc-fuse --no-deps
-conda run -n padocr python plugins/vie-plugin-dc-fuse/examples/run.py \
+conda run -n mobile_vision pip install -e plugins/vie-plugin-dc-fuse --no-deps
+conda run -n mobile_vision python plugins/vie-plugin-dc-fuse/examples/run.py \
   /path/to/image.jpg 五路有熔丝盒无磁环
 ```
 
@@ -49,7 +49,7 @@ conda run -n padocr python plugins/vie-plugin-dc-fuse/examples/run.py \
 在本插件目录执行：
 
 ```bash
-conda run -n padocr env PYTHONPATH=../..:. python -m pytest tests/ -v
+conda run -n mobile_vision env PYTHONPATH=../..:. python -m pytest tests/ -v
 ```
 
 变更记录见 [CHANGELOG.md](CHANGELOG.md)。
