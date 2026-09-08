@@ -135,6 +135,41 @@ class DCFuseDetectorAPI(BusinessLogicBase):
             is_detect_nut=True,
             metal_piece_counts=(2,),
         ),
+        "双层五路有熔丝盒无磁环": ResultJudge(
+            ways=5,
+            is_detectscrew=True,
+            is_detect_metal_piece=True,
+            is_detect_lower_screw=True,
+            metal_piece_counts=(6,),
+        ),
+        "双层六路无熔丝盒无磁环": ResultJudge(
+            ways=6,
+            is_detectscrew=True,
+            is_detect_metal_piece=True,
+            is_detect_lower_screw=True,
+            metal_piece_counts=(6,),
+        ),
+        "双层六路有熔丝盒无磁环": ResultJudge(
+            ways=6,
+            is_detectscrew=True,
+            is_detect_metal_piece=True,
+            is_detect_lower_screw=True,
+            metal_piece_counts=(6,),
+        ),
+        "双层七路无熔丝盒无磁环": ResultJudge(
+            ways=7,
+            is_detectscrew=True,
+            is_detect_metal_piece=True,
+            is_detect_lower_screw=True,
+            metal_piece_counts=(4, 6),
+        ),
+        "双层七路有熔丝盒无磁环": ResultJudge(
+            ways=7,
+            is_detectscrew=True,
+            is_detect_metal_piece=True,
+            is_detect_lower_screw=True,
+            metal_piece_counts=(4, 6),
+        ),
     }
 
     # 判定项 -> 该项对应的检测标签（含 no_ 前缀），用于回填 detailList，无每请求状态故置类属性
