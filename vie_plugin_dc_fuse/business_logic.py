@@ -48,11 +48,13 @@ class ResultJudge:
         brass_plate = det_info.get("brass_plate_6", [])
         metal_piece = det_info.get("metal_piece_4", [])
         no_screw = det_info.get("no_screw_1", [])
+        no_nut = det_info.get("no_nut2", [])
         upper_screw = det_info.get("upper_crossbeam_screw_9", [])
         lower_screw = det_info.get("lower_crossbeam_screw_10", [])
         no_upper_screw = det_info.get("no_upper_crossbeam_screw_9", [])
         no_lower_screw = det_info.get("no_lower_crossbeam_screw_10", [])
         small_screw = det_info.get("small_screw_8", [])
+        no_small_screw = det_info.get("no_small_screw_8", [])
         results = {
             "screw": True,
             "nut": True,
@@ -63,13 +65,13 @@ class ResultJudge:
             "small_screw": True,
         }
         if self.is_detectscrew:
-            results["screw"] = not (
-                len(screw) != self.ways * 2 and len(no_screw) > 0
-            )
+            results["screw"] = len(screw) == self.ways * 2 and not no_screw
         if self.is_small_screw:
-            results["small_screw"] = len(small_screw) == self.ways
+            results["small_screw"] = (
+                len(small_screw) == self.ways and not no_small_screw
+            )
         if self.is_detect_nut:
-            results["nut"] = len(nut) == self.ways * 2
+            results["nut"] = len(nut) == self.ways * 2 and not no_nut
         if self.is_detect_metal_piece:
             results["metal_piece"] = len(metal_piece) in self.metal_piece_counts
         if self.is_detect_upper_screw:
@@ -138,7 +140,7 @@ class DCFuseDetectorAPI(BusinessLogicBase):
     # 判定项 -> 该项对应的检测标签（含 no_ 前缀），用于回填 detailList，无每请求状态故置类属性
     label_mapping = {
         "screw": ["screw_1", "no_screw_1"],
-        "nut": ["nut_2"],
+        "nut": ["nut_2", "no_nut2"],
         "small_screw": ["small_screw_8", "no_small_screw_8"],
         "brass_plate": ["brass_plate_6"],
         "metal_piece": ["metal_piece_4"],
