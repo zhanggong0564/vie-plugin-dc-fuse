@@ -29,7 +29,7 @@ def test_business_initialization_creates_and_injects_runner():
     runner_factory.assert_called_once_with(
         RunnerSpec(
             scenario="dc_fuse",
-            onnx_path="./weights/dc_fuse/det_yolo_v5.onnx",
+            onnx_path="./weights/dc_fuse/det_yolo_v6.onnx",
         ),
         OnnxRuntimeOptions.from_settings(settings),
     )
