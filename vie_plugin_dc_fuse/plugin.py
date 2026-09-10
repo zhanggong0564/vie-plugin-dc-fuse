@@ -17,14 +17,11 @@ class DCFuseRouter(BaseRouter):
 
     @staticmethod
     def _extract_product_type(request_params):
-        # 本场景型号字段名为 product_model，重写基类默认的 product_type 提取，
-        # 使数据回流按型号分目录而非落到 _unknown_model。
-        model_params = getattr(request_params, "modelParams", None)
-        return getattr(model_params, "product_model", None) if model_params else None
+        # 推理与数据回流共用经 Schema 校验的产品类型。
+        return request_params.product_type
 
     def get_inputs(self, request_params: DCFuseRequest, image: np.ndarray):
-        product_model = request_params.modelParams.product_model
-        return InputParamsBusiness(image=image, product_type=product_model)
+        return InputParamsBusiness(image=image, product_type=request_params.product_type)
 
 
 dc_fuse_router = DCFuseRouter(
