@@ -13,7 +13,7 @@ class DcFuseConfig(SceneSettings):
         extra="ignore",
     )
 
-    model_path: str = "./weights/dc_fuse/det_yolo_v5.onnx"
+    model_path: str = "./weights/dc_fuse/det_yolo_v6.onnx"
     conf_threshold: float = Field(default=0.6, ge=0, le=1)
 
     @property
