@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vie-plugin-dc-fuse"
-version = "0.2.0"
+version = "0.2.1"
 description = "VIE 直流熔丝检测插件"
 requires-python = ">=3.10"
 # 二进制 wheel 部署时依赖框架包；in-repo dev 安装用 --no-deps，
