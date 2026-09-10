@@ -5,6 +5,17 @@
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-10
+
+### 变更
+
+- 默认检测模型更新为 `det_yolo_v6.onnx`。
+- 新请求从 `AICameraModel` 的产品类型 `AIParameterValue` 构建
+  推理输入和数据回流目录，并保留 `modelParams.product_model`
+  作为旧格式兼容入口。
+- 请求阶段校验产品类型非空；允许 `AICameraModel` 中不同版本
+  重复同一型号，多个不同型号需由旧参数明确消歧。
+
 ## [0.2.0] - 2026-09-08（Git tag: `v0.2.0`）
 
 ### 变更
