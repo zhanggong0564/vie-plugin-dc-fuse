@@ -7,7 +7,9 @@
 
 - 路径：`POST /api/v1/dcfuse_detect`
 - 表单字段：`file` 为图片，`json_data` 为 JSON 字符串
-- 关键参数：`modelParams.product_model`
+- 关键参数：优先使用 `AICameraModel` 中 `AIParameterName`
+  为“产品类型”的 `AIParameterValue`；兼容旧请求的
+  `modelParams.product_model`
 - 支持型号以 `business_logic.py` 的 `SUPPORTED_TYPES` 为准
 
 `json_data` 示例：
@@ -17,9 +19,16 @@
   "product": "直流熔丝",
   "type": "material-no",
   "modelParams": {
-    "product_model": "五路有熔丝盒无磁环"
+    "guide_line": [],
+    "example_images": []
   },
-  "AICameraModel": []
+  "AICameraModel": [{
+    "Id": "registration-id",
+    "Version": 1,
+    "ModelFile": null,
+    "AIParameterName": "产品类型",
+    "AIParameterValue": "五路有熔丝盒无磁环"
+  }]
 }
 ```
 
@@ -27,7 +36,7 @@
 
 | 配置 | 默认值 |
 | --- | --- |
-| 检测模型 | `./weights/dc_fuse/det_yolo_v5.onnx` |
+| 检测模型 | `./weights/dc_fuse/det_yolo_v6.onnx` |
 | 置信度阈值 | `0.6` |
 
 模型不随插件仓库提交。运行目录必须能解析上述相对路径。
