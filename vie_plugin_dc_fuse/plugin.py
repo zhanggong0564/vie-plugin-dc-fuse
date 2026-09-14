@@ -9,6 +9,22 @@ from . import business_logic  # noqa: F401  触发 ScenarioRegistry 注册
 
 
 class DCFuseRouter(BaseRouter):
+    request_document_model = DCFuseRequest
+    request_document_example = {
+        "product": "直流熔丝", "type": "物料号",
+        "modelParams": {"guide_line": [], "example_images": []},
+        "AICameraModel": [{
+            "Id": "registration-id", "Version": 1, "ModelFile": None,
+            "AIParameterName": "产品类型", "AIParameterValue": "六路无熔丝盒无磁环",
+        }],
+    }
+    request_document_notes = (
+        "产品类型从 AICameraModel 中 AIParameterName=产品类型 的非空 AIParameterValue 获取。"
+        "允许不同版本重复同一产品类型；无新参数时使用兼容字段 modelParams.product_model。"
+        "新参数只有一个型号时，旧字段若非空必须与其一致；新参数有多个不同型号时，"
+        "必须用旧字段指定其中一个型号，否则拒绝请求。新旧参数均缺失时也拒绝请求。"
+    )
+
     def __init__(self, router_name, api_path, summary, description, detector_type, tag=None):
         super().__init__(router_name, api_path, summary, description, detector_type, tag=tag)
 
