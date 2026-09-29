@@ -6,6 +6,7 @@
 """
 
 from collections import defaultdict
+from copy import copy
 
 from services.base import BusinessLogicBase
 from services.inference import (
@@ -14,7 +15,7 @@ from services.inference import (
     create_inference_runner,
 )
 from services.scenario_registry import scenario_registry
-from schemas.data_base import MoMResult, DetectionItem, MessageType
+from schemas.data_base import MoMResult, DetectionItem, MessageType, InputParamsBusiness
 from schemas.exceptions import ProductNotRegisteredError, ModelInferenceError
 from schemas.inference_context import InferenceContext
 from utils import vision_logger
@@ -42,7 +43,7 @@ class ResultJudge:
         self.is_small_screw = is_small_screw
         self.metal_piece_counts = frozenset(metal_piece_counts)
 
-    def __call__(self, det_info):
+    def __call__(self, det_info, *, merged_crossbeam: bool = False):
         screw = det_info.get("screw_1", [])
         nut = det_info.get("nut_2", [])
         brass_plate = det_info.get("brass_plate_6", [])
@@ -78,6 +79,16 @@ class ResultJudge:
             results["upper_screw"] = len(upper_screw) == 2 and not no_upper_screw
         if self.is_detect_lower_screw:
             results["lower_screw"] = len(lower_screw) == 2 and not no_lower_screw
+        if merged_crossbeam:
+            # 仅同时检查上下横梁的已验证型号允许使用合并数量规则。
+            if not (self.is_detect_upper_screw and self.is_detect_lower_screw):
+                raise ValueError("merged crossbeam rule requires both beams")
+            results.pop("upper_screw")
+            results.pop("lower_screw")
+            results["crossbeam_screw"] = (
+                len(det_info.get("crossbeam_screw", [])) == 4
+                and not det_info.get("no_crossbeam_screw")
+            )
         return {
             key: value
             for key, value in results.items()
@@ -93,6 +104,7 @@ class ResultJudge:
             "upper_screw": self.is_detect_upper_screw,
             "lower_screw": self.is_detect_lower_screw,
             "brass_plate": True,
+            "crossbeam_screw": self.is_detect_upper_screw and self.is_detect_lower_screw,
             "small_screw": self.is_small_screw,
         }
         return detection_map.get(key, False)
@@ -100,6 +112,8 @@ class ResultJudge:
 
 @scenario_registry.register("dc_fuse")
 class DCFuseDetectorAPI(BusinessLogicBase):
+    MERGED_PRODUCT_TYPE = "五路有熔丝盒有磁环"
+
     SUPPORTED_TYPES = {
         "五路有熔丝盒有磁环": ResultJudge(
             ways=5,
@@ -174,6 +188,7 @@ class DCFuseDetectorAPI(BusinessLogicBase):
 
     # 判定项 -> 该项对应的检测标签（含 no_ 前缀），用于回填 detailList，无每请求状态故置类属性
     label_mapping = {
+        "crossbeam_screw": ["crossbeam_screw", "no_crossbeam_screw"],
         "screw": ["screw_1", "no_screw_1"],
         "nut": ["nut_2", "no_nut2"],
         "small_screw": ["small_screw_8", "no_small_screw_8"],
@@ -188,6 +203,8 @@ class DCFuseDetectorAPI(BusinessLogicBase):
 
         cfg = DcFuseConfig()
         runner = None
+        merged_runner = None
+        self.merged_detector = None
         try:
             runner = create_inference_runner(
                 RunnerSpec(scenario="dc_fuse", onnx_path=cfg.inference_model_path),
@@ -203,7 +220,26 @@ class DCFuseDetectorAPI(BusinessLogicBase):
                 )
             else:
                 self.detector = DCFuseDetector(runner, cfg.confThreshold)
+            if cfg.tiled_inference and cfg.merged_inference:
+                merged_runner = create_inference_runner(
+                    RunnerSpec(scenario="dc_fuse", onnx_path=cfg.merged_model_path,
+                               model_role="merged_crossbeam"),
+                    OnnxRuntimeOptions.from_settings(settings),
+                )
+                thresholds = {
+                    name: value for name, value in cfg.tiled_class_conf_thresholds.model_dump().items()
+                    if name not in ("upper_crossbeam_screw_9", "lower_crossbeam_screw_10")
+                }
+                thresholds["crossbeam_screw"] = cfg.merged_crossbeam_conf_threshold
+                self.merged_detector = DCFuseDetector(
+                    merged_runner, cfg.tiled_conf_threshold, merged_classes=True,
+                    tiled_inference=True, tile_overlap=cfg.tile_overlap,
+                    class_conf_thresholds=thresholds,
+                    copper_max_aspect_ratio=cfg.tiled_copper_max_aspect_ratio,
+                )
         except Exception as e:
+            if merged_runner is not None:
+                merged_runner.close()
             if runner is not None:
                 try:
                     runner.close()
@@ -217,6 +253,24 @@ class DCFuseDetectorAPI(BusinessLogicBase):
                 scenario="dc_fuse",
                 original_error=e,
             ) from e
+
+    def detect(self, params: InputParamsBusiness) -> MoMResult:
+        merged = getattr(self, "merged_detector", None)
+        if merged is not None and params.product_type == self.MERGED_PRODUCT_TYPE:
+            # 使用请求局部视图，绝不修改共享单例的detector，避免并发串用模型。
+            pipeline = copy(self)
+            pipeline.detector = merged
+            return BusinessLogicBase.detect(pipeline, params)
+        return super().detect(params)
+
+    def close(self) -> None:
+        try:
+            super().close()
+        finally:
+            merged = getattr(self, "merged_detector", None)
+            if merged is not None:
+                self.merged_detector = None
+                merged.close()
 
     def business_post_process(self, ctx: InferenceContext) -> None:
         product_type = ctx.product_type
@@ -235,7 +289,8 @@ class DCFuseDetectorAPI(BusinessLogicBase):
             result.class_names,
         ):
             det_info[name].append({"bbox": bbox, "score": score})
-        judge_result = result_judge(det_info)
+        merged_crossbeam = getattr(getattr(self, "detector", None), "nc", 12) == 10
+        judge_result = result_judge(det_info, merged_crossbeam=merged_crossbeam)
         # 坐标输出像素 xyxy，归一化由基类 normalize_hook 统一处理（NORMALIZE 默认 True）
         mom_result = MoMResult(status=True, message=MessageType.SUCCESS.value)
         for label, is_pass in judge_result.items():
