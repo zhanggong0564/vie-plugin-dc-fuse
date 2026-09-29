@@ -132,3 +132,15 @@ DC_FUSE_TILED_CLASS_CONF_THRESHOLDS__BRASS_PLATE_6=0.75
 当前阈值依据171张实际OK、曾误判NG的样本选定；真实缺陷NG召回及其他型号
 的真实模型效果尚未验证，不能仅依据OK样本的通过数宣称缺陷检测安全。
 默认开启在新插件加载时生效；已有环境变量可覆盖默认值，远端服务需要单独发布。
+
+### v6.2 合并横梁模型
+
+默认仅“五路有熔丝盒有磁环”使用 `det_yolo_v6.2_split.onnx`（10类）。
+横梁输出 `crossbeam_screw` / `no_crossbeam_screw`，合计4个且没有缺件标签时通过；
+该规则不单独保证上下各2个。大螺钉0.75、铜排0.75、小螺钉0.70、金属件0.45、横梁0.40。
+其他型号继续使用原12类模型及原业务规则。两种模型都在启动时加载，
+请求使用独立视图选择模型，不修改共享实例的检测器。
+`DC_FUSE_MERGED_INFERENCE=false` 可恢复全部型号使用旧切图模型；
+`DC_FUSE_TILED_INFERENCE=false` 恢复整图模式，并不加载合并模型。
+合并模型配置为 `DC_FUSE_MERGED_MODEL_PATH`、`DC_FUSE_MERGED_CROSSBEAM_CONF_THRESHOLD`。
+171张确认OK样本中，v6.2通过163张、误NG8张；真实缺陷召回尚未验证。
