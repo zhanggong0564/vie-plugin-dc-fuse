@@ -19,13 +19,14 @@ class DCFuseDetector(TiledYoloInfer):
         nmsThreshold=0.5,
         task="det",
         *,
+        merged_classes: bool = False,
         tiled_inference: bool = False,
         tile_overlap: int = 200,
         class_conf_thresholds: Mapping[str, float] | None = None,
         copper_max_aspect_ratio: float | None = None,
     ):
         super().__init__(
-            nc=12,
+            nc=10 if merged_classes else 12,
             runner=runner,
             confThreshold=confThreshold,
             nmsThreshold=nmsThreshold,
@@ -47,6 +48,13 @@ class DCFuseDetector(TiledYoloInfer):
             10: "small_screw_8",
             11: "upper_crossbeam_screw_9",
         }
+
+        if merged_classes:
+            self.id2name = {
+                0: "brass_plate_6", 1: "crossbeam_screw", 2: "metal_piece_4",
+                3: "no_crossbeam_screw", 4: "no_nut2", 5: "no_screw_1",
+                6: "no_small_screw_8", 7: "nut_2", 8: "screw_1", 9: "small_screw_8",
+            }
 
         self.class_conf_thresholds = dict(class_conf_thresholds or {})
         unknown = self.class_conf_thresholds.keys() - self.id2name.values()
@@ -71,7 +79,7 @@ class DCFuseDetector(TiledYoloInfer):
     def _filter_class_confidence(self, prediction: np.ndarray) -> np.ndarray:
         """按原始最高分类筛选；不将被拒绝的框降级为第二类别。"""
         if prediction.ndim != 3 or prediction.shape[1] != 4 + self.nc:
-            raise ValueError("dc_fuse requires YOLO box outputs with 12 classes")
+            raise ValueError(f"dc_fuse requires YOLO box outputs with {self.nc} classes")
         filtered = prediction.copy()
         scores = filtered[:, 4:, :]
         best_class = scores.argmax(axis=1)
