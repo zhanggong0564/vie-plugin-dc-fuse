@@ -12,7 +12,9 @@ def test_scene_registers_with_scenario_registry():
     assert scenario_registry.snapshot()["dc_fuse"] is DCFuseDetectorAPI
 
 
-def test_business_initialization_creates_and_injects_runner():
+def test_business_initialization_creates_and_injects_runner(monkeypatch):
+    monkeypatch.delenv("DC_FUSE_TILED_INFERENCE", raising=False)
+    monkeypatch.delenv("DC_FUSE_TILED_MODEL_PATH", raising=False)
     from vie_plugin_dc_fuse.business_logic import DCFuseDetectorAPI
 
     settings = MagicMock()
@@ -29,11 +31,19 @@ def test_business_initialization_creates_and_injects_runner():
     runner_factory.assert_called_once_with(
         RunnerSpec(
             scenario="dc_fuse",
-            onnx_path="./weights/dc_fuse/det_yolo_v6.onnx",
+            onnx_path="./weights/dc_fuse/det_yolo_v6_split.onnx",
         ),
         OnnxRuntimeOptions.from_settings(settings),
     )
-    detector_class.assert_called_once_with(runner, 0.6)
+    detector_class.assert_called_once_with(
+        runner, 0.4, tiled_inference=True, tile_overlap=200,
+        class_conf_thresholds={
+            "screw_1": 0.75, "brass_plate_6": 0.75, "small_screw_8": 0.70,
+            "metal_piece_4": 0.45, "upper_crossbeam_screw_9": 0.40,
+            "lower_crossbeam_screw_10": 0.40,
+        },
+        copper_max_aspect_ratio=1.0,
+    )
     assert api.detector is detector_class.return_value
 
 
