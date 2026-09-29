@@ -4,6 +4,9 @@ from schemas.data_base import DetectionItem, MoMResult
 
 
 RESPONSE_NOTES = (
+    '默认五路有熔丝盒有磁环使用v6.2切图模型，横梁明细为crossbeam_screw和'
+    'no_crossbeam_screw；横梁合计必须恰好4个且无缺件标签，不单独保证上下各2个。'
+    '其他型号保留原模型和上下横梁类别规则。'
     '### 场景明细与判定规则\n\n明细 scene 使用检测标签（screw_1、no_screw_1、nut_2、no_nut2、small_screw_'
     '8、no_small_screw_8、brass_plate_6、metal_piece_4、upper_crossbeam_screw_9、no_up'
     'per_crossbeam_screw_9、lower_crossbeam_screw_10、no_lower_crossbeam_screw_10）；'
