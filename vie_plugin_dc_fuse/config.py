@@ -46,6 +46,13 @@ class DcFuseConfig(SceneSettings):
     )
     tiled_copper_max_aspect_ratio: float = Field(default=1.0, gt=0, allow_inf_nan=False)
 
+    # 已验证型号使用10类合并横梁模型；其他型号保留12类模型。
+    merged_inference: bool = True
+    merged_model_path: str = Field(
+        default="./weights/dc_fuse/det_yolo_v6.2_split.onnx", min_length=1,
+    )
+    merged_crossbeam_conf_threshold: float = Field(default=0.4, ge=0, le=1)
+
     @property
     def inference_model_path(self) -> str:
         return self.tiled_model_path if self.tiled_inference else self.model_path
