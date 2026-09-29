@@ -190,10 +190,19 @@ class DCFuseDetectorAPI(BusinessLogicBase):
         runner = None
         try:
             runner = create_inference_runner(
-                RunnerSpec(scenario="dc_fuse", onnx_path=cfg.model_path),
+                RunnerSpec(scenario="dc_fuse", onnx_path=cfg.inference_model_path),
                 OnnxRuntimeOptions.from_settings(settings),
             )
-            self.detector = DCFuseDetector(runner, cfg.confThreshold)
+            if cfg.tiled_inference:
+                self.detector = DCFuseDetector(
+                    runner, cfg.inference_conf_threshold,
+                    tiled_inference=True,
+                    tile_overlap=cfg.tile_overlap,
+                    class_conf_thresholds=cfg.tiled_class_conf_thresholds.model_dump(),
+                    copper_max_aspect_ratio=cfg.tiled_copper_max_aspect_ratio,
+                )
+            else:
+                self.detector = DCFuseDetector(runner, cfg.confThreshold)
         except Exception as e:
             if runner is not None:
                 try:
