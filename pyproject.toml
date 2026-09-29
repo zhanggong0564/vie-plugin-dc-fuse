@@ -9,7 +9,7 @@ description = "VIE 直流熔丝检测插件"
 requires-python = ">=3.10"
 # 二进制 wheel 部署时依赖框架包；in-repo dev 安装用 --no-deps，
 # 框架的 services/schemas/routers 由仓库根在 sys.path 上提供。
-dependencies = ["vie-framework"]
+dependencies = ["vie-framework>=2.2.8"]
 
 [project.entry-points."vie.plugins"]
 dc_fuse = "vie_plugin_dc_fuse.plugin"
