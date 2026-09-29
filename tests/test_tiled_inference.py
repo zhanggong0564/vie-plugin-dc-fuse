@@ -41,6 +41,7 @@ def test_invalid_tiled_settings(name, value):
 
 
 def test_initialization_selects_split_runner_and_tiled_detector(monkeypatch):
+    monkeypatch.setenv('DC_FUSE_MERGED_INFERENCE', 'false')
     monkeypatch.setenv('DC_FUSE_TILED_INFERENCE', 'true')
     runner = MagicMock()
     with (
