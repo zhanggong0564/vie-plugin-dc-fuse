@@ -1,8 +1,12 @@
 """Entry point: register the scene and expose ``dc_fuse_router``."""
 
+import os
+import re
+
 import numpy as np
 
 from routers.base_router import BaseRouter
+from routers.backflow_service import BackflowService, BackflowTarget
 from schemas.inspection import InspectionVerdict
 from .response_docs import RESPONSE_EXAMPLES, RESPONSE_NOTES
 from schemas.data_base import InputParamsBusiness
@@ -40,6 +44,21 @@ class DCFuseRouter(BaseRouter):
     def _extract_product_type(request_params):
         # 推理与数据回流共用经 Schema 校验的产品类型。
         return request_params.product_type
+
+    def resolve_backflow_target(self, original_filename, fallback_product_type=None):
+        """按产品型号归档，并优先使用文件名末尾的数字时间戳。"""
+        target = super().resolve_backflow_target(
+            original_filename,
+            fallback_product_type,
+        )
+        safe_filename = BackflowService.safe_client_filename(original_filename)
+        stem = os.path.splitext(safe_filename)[0]
+        match = re.search(r"(?:^|-)(\d+)$", stem)
+        return BackflowTarget(
+            scene_dir=self.detector_type,
+            model_dir=target.model_dir,
+            save_stem=match.group(1) if match else target.save_stem,
+        )
 
     def get_inputs(self, request_params: DCFuseRequest, image: np.ndarray):
         return InputParamsBusiness(image=image, product_type=request_params.product_type)
