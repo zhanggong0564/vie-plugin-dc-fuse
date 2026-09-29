@@ -13,6 +13,7 @@ def test_scene_registers_with_scenario_registry():
 
 
 def test_business_initialization_creates_and_injects_runner(monkeypatch):
+    monkeypatch.setenv("DC_FUSE_MERGED_INFERENCE", "false")
     monkeypatch.delenv("DC_FUSE_TILED_INFERENCE", raising=False)
     monkeypatch.delenv("DC_FUSE_TILED_MODEL_PATH", raising=False)
     from vie_plugin_dc_fuse.business_logic import DCFuseDetectorAPI
@@ -67,7 +68,8 @@ def test_business_initialization_closes_runner_when_detector_creation_fails():
     runner.close.assert_called_once_with()
 
 
-def test_business_close_is_idempotent():
+def test_business_close_is_idempotent(monkeypatch):
+    monkeypatch.setenv("DC_FUSE_MERGED_INFERENCE", "false")
     from vie_plugin_dc_fuse.business_logic import DCFuseDetectorAPI
 
     detector = MagicMock()
